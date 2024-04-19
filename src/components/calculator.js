@@ -2,8 +2,11 @@ import { Component } from "preact";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { FormControl, FormLabel, List, ListItem, TextField } from "@mui/material";
+import { FormControl, FormLabel, IconButton, List, ListItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
+
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 
 export default class Calculator extends Component {
     constructor() {
@@ -19,7 +22,8 @@ export default class Calculator extends Component {
             lunchStart: dayjs().hour(12).minute(0),
             lunchEnd:  dayjs().hour(13).minute(0),
             end:  dayjs().hour(17).minute(0),
-            target: 40
+            target: 40,
+            lock: true
         }
     }
 
@@ -58,7 +62,11 @@ export default class Calculator extends Component {
     handleEndLunch = (val) => {
         this.setState({lunchEnd: val})
         setTimeout(() => {
-            this.adjustEnd(this.state.target)
+            if (this.state.lock) {
+                this.adjustEnd(this.state.target)
+            } else {
+                this.setState({target: this.total})
+            }
         }, 0)
     }
 
@@ -66,13 +74,21 @@ export default class Calculator extends Component {
         this.setState({end: val})
         setTimeout(() => {
             const hourDiff = this.state.target - this.total
-            this.setState({lunchEnd: this.state.lunchEnd.add(-hourDiff, 'hour')})
+            if (this.state.lock) {
+                this.setState({lunchEnd: this.state.lunchEnd.add(-hourDiff, 'hour')})
+            } else {
+                this.setState({target: this.total})
+            }
         }, 0)
     }
 
     adjustEnd = (target) => {
         const hourDiff = target - this.total
         this.setState({end: this.state.end.add(hourDiff, 'hour')})
+    }
+
+    handleLock = () => {
+        this.setState({lock: !this.state.lock})
     }
 
     render() {
@@ -150,6 +166,9 @@ export default class Calculator extends Component {
                             value={this.state.target}
                             onChange={(evt) => {this.adjustEnd(evt.target.value); this.setState({target: evt.target.value})}}
                         />
+                        <IconButton onClick={this.handleLock}>
+                            {this.state.lock ? <LockIcon></LockIcon> : <LockOpenIcon></LockOpenIcon>}
+                        </IconButton>
                     </ListItem>
                     <ListItem>
                         <p>
