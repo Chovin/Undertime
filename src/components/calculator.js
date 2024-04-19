@@ -143,6 +143,7 @@ export default class Calculator extends Component {
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <TimePicker
                                 label="Lunch End"
+                                className="focus"
                                 value={this.state.lunchEnd}
                                 onChange={this.handleEndLunch}
                             />
@@ -153,6 +154,7 @@ export default class Calculator extends Component {
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <TimePicker
                                 label="Clock Out"
+                                className="focus"
                                 value={this.state.end}
                                 onChange={this.handleEnd}
                             />
@@ -162,6 +164,7 @@ export default class Calculator extends Component {
                     <ListItem>
                         <TextField
                             label="Target Hours"
+                            className="focus"
                             type="number"
                             value={this.state.target}
                             onChange={(evt) => {this.adjustEnd(evt.target.value); this.setState({target: evt.target.value})}}

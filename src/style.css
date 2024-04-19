@@ -71,3 +71,8 @@ div.MuiFormControl-root {
 		row-gap: 1rem;
 	}
 }
+
+.focus fieldset {
+	border-color: rgb(42, 123, 205);
+	border-width: 2px;
+}
