@@ -1,6 +1,5 @@
 import "preact/debug";
 import { render } from 'preact';
-import preactLogo from './assets/preact.svg';
 import './style.css';
 import Calculator from './components/calculator';
 
