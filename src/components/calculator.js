@@ -91,6 +91,20 @@ export default class Calculator extends Component {
         this.setState({lock: !this.state.lock})
     }
 
+    componentDidMount() {
+        this.setState(JSON.parse(localStorage.getItem("sub_state")))
+    }
+
+    componentDidUpdate() {
+        localStorage.setItem("sub_state", JSON.stringify(this.getLocalStorageState()))
+    }
+
+    getLocalStorageState = () => {
+        return {
+            lock: this.state.lock
+        }
+    }
+
     render() {
         return (
             <FormControl>
