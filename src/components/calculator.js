@@ -73,13 +73,22 @@ export default class Calculator extends Component {
     handleEnd = (val) => {
         this.setState({end: val})
         setTimeout(() => {
-            const hourDiff = this.state.target - this.total
-            if (this.state.lock) {
-                this.setState({lunchEnd: this.state.lunchEnd.add(-hourDiff, 'hour')})
-            } else {
-                this.setState({target: this.total})
-            }
+            this.relativeAdjust()
         }, 0)
+    }
+
+    relativeAdjust = (end) => {
+        end = end || false
+        const hourDiff = this.state.target - this.total
+        if (this.state.lock) {
+            if (end) {
+                this.adjustEnd(this.state.target)
+            } else {
+                this.setState({lunchEnd: this.state.lunchEnd.add(-hourDiff, 'hour')})
+            }
+        } else {
+            this.setState({target: this.total})
+        }
     }
 
     adjustEnd = (target) => {
@@ -89,6 +98,20 @@ export default class Calculator extends Component {
 
     handleLock = () => {
         this.setState({lock: !this.state.lock})
+    }
+
+    componentDidMount() {
+        this.setState(JSON.parse(localStorage.getItem("sub_state")))
+    }
+
+    componentDidUpdate() {
+        localStorage.setItem("sub_state", JSON.stringify(this.getLocalStorageState()))
+    }
+
+    getLocalStorageState = () => {
+        return {
+            lock: this.state.lock
+        }
     }
 
     render() {
@@ -108,7 +131,7 @@ export default class Calculator extends Component {
                                             this.setState({
                                                 days: {...this.state.days, [key]: evt.target.value}
                                             })
-                                            setTimeout(() => {this.adjustEnd(this.state.target)}, 0)
+                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
                                         }}
                                     />
                                 </ListItem>
