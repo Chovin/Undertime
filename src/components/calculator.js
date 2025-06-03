@@ -312,7 +312,7 @@ export default class Calculator extends Component {
                                                                         >
                                                                         </div>
                                                                         <div>
-                                                                            - {lunch.lunchEnd.diff(lunch.lunchStart, 'hour', true)} hours
+                                                                            - {this.displayNumber(lunch.lunchEnd.diff(lunch.lunchStart, 'hour', true))} hours
                                                                         </div>
                                                                         <IconButton
                                                                             onClick={() => {
