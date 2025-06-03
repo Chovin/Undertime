@@ -197,7 +197,15 @@ export default class Calculator extends Component {
                                             <ExpandMore />
                                         </IconButton>
                                     }>
-                                        <FormLabel>{key}</FormLabel>
+                                        <FormLabel>
+                                            <Box className="hidden-text-width"
+                                                style={{
+                                                    "--content": `"${key}"`,
+                                                }}
+                                            >
+                                                Wed
+                                            </Box>
+                                        </FormLabel>
                                         <TextField
                                             label="Total Hours"
                                             type="number"

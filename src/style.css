@@ -82,3 +82,15 @@ fieldset {
 	border-width: 2px;
 	transition: none;
 }
+
+.hidden-text-width {
+	position: relative;
+	color: rgba(0,0,0,0);
+}
+.hidden-text-width::after {
+	position: absolute;
+	color: #2f2f2f;
+	top: 0;
+	left: 0;
+	content: var(--content);
+}
