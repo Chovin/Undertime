@@ -263,7 +263,7 @@ export default class Calculator extends Component {
                                                                                     onChange={(val) => {
                                                                                         let day_details = this.state.day_details
                                                                                         lunch.lunchEnd = val
-                                                                                        if (lunch.lunchEnd.isBefore(val) || lunch.lunchEnd.isSame(val)) {
+                                                                                        if (lunch.lunchEnd.isBefore(val) || lunch.lunchStart.isSame(val)) {
                                                                                             lunch.lunchStart = val.subtract(1, 'minute')
                                                                                         }
                                                                                         this.setState({day_details})
@@ -338,7 +338,7 @@ export default class Calculator extends Component {
                                                                                 let nlunches = day_details[key].lunches.length
                                                                                 if (nlunches > 0) {
                                                                                     let last_lunch = day_details[key].lunches[nlunches-1]
-                                                                                    last_lunch.lunchEnd = last_lunch.lunchEnd.add(hourDiff, 'hour', true)
+                                                                                    last_lunch.lunchEnd = last_lunch.lunchEnd.add(-hourDiff, 'hour', true)
                                                                                 } else {
                                                                                     day_details[key].start = day_details[key].start.add(hourDiff, 'hour', true)
                                                                                 }
