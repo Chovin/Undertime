@@ -2,11 +2,13 @@ import { Component } from "preact";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { FormControl, FormLabel, IconButton, List, ListItem, TextField, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import { FormControl, FormLabel, IconButton, List, ListItem, TextField, Accordion, AccordionSummary, AccordionDetails, Box } from "@mui/material";
 import dayjs from "dayjs";
 
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { ExpandMore } from "@mui/icons-material";
 
 export default class Calculator extends Component {
@@ -23,9 +25,11 @@ export default class Calculator extends Component {
         for (let day in days) {
             day_details[day] = {
                 start: dayjs().hour(8).minute(0),
-                lunchStart: dayjs().hour(12).minute(0),
-                lunchEnd:  dayjs().hour(13).minute(0),
+                lunches: [
+                    {lunchStart: dayjs().hour(12).minute(0), lunchEnd: dayjs().hour(13).minute(0)}
+                ],
                 end:  dayjs().hour(17).minute(0),
+                _locked: false
             }
             accordion_state[day] = false
         }
@@ -145,9 +149,21 @@ export default class Calculator extends Component {
 
     dayTotal(day) {
         let details = this.state.day_details[day]
-        let morning = details.lunchStart.diff(details.start, 'hour', true)
-        let afternoon = details.end.diff(details.lunchEnd, 'hour', true)
-        return morning + afternoon
+        if (details.lunches.length == 0) {
+            return details.end.diff(details.start, 'hour', true)
+        }
+        let pairs = [[details.start, details.lunches[0].lunchStart], 
+                     [details.lunches[details.lunches.length-1].lunchEnd, details.end]]
+        for (let i = 0; i < details.lunches.length-1; i++) {
+            let fh = details.lunches[i].lunchEnd
+            let lh = details.lunches[i+1].lunchStart
+            pairs.push([fh, lh])
+        }
+        let acc = 0;
+        for (let [a, b] of pairs) {
+            acc += b.diff(a, 'hour', true)
+        }
+        return acc
     }
 
 
@@ -188,11 +204,124 @@ export default class Calculator extends Component {
                                                 setTimeout(() => {this.relativeAdjust(true)}, 0)
                                             }}
                                         />
+                                        <Box display="flex" alignItems="center" gap={1}> 
+                                            {/* oh, I'm using preact/mui, thought I was using Vue/Vuetify */}
+                                            <IconButton
+                                                onClick={() => {
+                                                    let day_details = this.state.day_details
+                                                    day_details[key]._locked = !day_details[key]._locked
+                                                    this.setState({day_details})
+                                                }}>
+                                                {this.state.day_details[key]._locked ? <LockIcon/> : <LockOpenIcon/>}
+                                            </IconButton>
+                                        </Box>
                                     </AccordionSummary>
                                     <AccordionDetails>
                                         <List>
                                             {
                                                 Object.entries(this.state.day_details[key]).map(([day_part, part_val]) => {
+                                                    if (day_part == "_locked") {  // design debt. will fix later
+                                                        return
+                                                    }
+                                                    if (day_part == "lunches") {
+                                                        return part_val.map((lunch, index) => {
+                                                            return (
+                                                                <ListItem key={`${key}-${index}`}
+                                                                    class="d-flex justify-content-between align-items-center"
+                                                                >
+                                                                    <div>
+                                                                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                                                            <div className="d-block"
+                                                                                style={{padding: '8px 0px'}}
+                                                                            >
+                                                                                <TimePicker
+                                                                                    label={this.day_detail_labels['lunchStart']}
+                                                                                    value={lunch.lunchStart}
+                                                                                    onChange={(val) => {
+                                                                                        let day_details = this.state.day_details
+                                                                                        lunch.lunchStart = val
+                                                                                        if (lunch.lunchEnd.isBefore(val) || lunch.lunchEnd.isSame(val)) {
+                                                                                            lunch.lunchEnd = val.add(1, 'minute')
+                                                                                        }
+                                                                                        this.setState({day_details})
+                                                                                        if (day_details[key]._locked) {
+                                                                                            let hourDiff = this.state.days[key] - this.dayTotal(key)
+                                                                                            day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
+                                                                                        } else {
+                                                                                            this.updateDayTotal(key)
+                                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="d-block"
+                                                                                style={{padding: '8px 0px'}}
+                                                                            >
+                                                                                <TimePicker
+                                                                                    label={this.day_detail_labels['lunchEnd']}
+                                                                                    value={lunch.lunchEnd}
+                                                                                    onChange={(val) => {
+                                                                                        let day_details = this.state.day_details
+                                                                                        lunch.lunchEnd = val
+                                                                                        if (lunch.lunchEnd.isBefore(val) || lunch.lunchEnd.isSame(val)) {
+                                                                                            lunch.lunchStart = val.subtract(1, 'minute')
+                                                                                        }
+                                                                                        this.setState({day_details})
+                                                                                        if (day_details[key]._locked) {
+                                                                                            let hourDiff = this.state.days[key] - this.dayTotal(key)
+                                                                                            day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
+                                                                                        } else {
+                                                                                            this.updateDayTotal(key)
+                                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                        }
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                        </LocalizationProvider>
+                                                                    </div>
+                                                                    <div
+                                                                        style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                        }}
+                                                                    >
+                                                                        <div
+                                                                            style={{
+                                                                                border: '1px solid #bbb',
+                                                                                borderLeft: 'none',
+                                                                                borderTopRightRadius: '1rem',
+                                                                                borderBottomRightRadius: '1rem',
+                                                                                height: '5rem',
+                                                                                width: '.5rem'
+                                                                            }}
+                                                                        >
+                                                                        </div>
+                                                                        <div>
+                                                                            - {lunch.lunchEnd.diff(lunch.lunchStart, 'hour', true)} hours
+                                                                        </div>
+                                                                        <IconButton
+                                                                            onClick={() => {
+                                                                                let day_details = this.state.day_details
+                                                                                day_details[key].lunches.splice(index, 1)
+                                                                                this.setState({day_details})
+                                                                                if (day_details[key]._locked) {
+                                                                                    let hourDiff = this.state.days[key] - this.dayTotal(key)
+                                                                                    day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
+                                                                                } else {
+                                                                                    this.updateDayTotal(key)
+                                                                                    setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                }
+                                                                            }}
+                                                                            style={{marginLeft: '8px'}}
+                                                                        >
+                                                                            <DeleteIcon />
+                                                                        </IconButton>
+                                                                    </div>
+                                                                </ListItem>
+
+                                                            )
+                                                        })
+                                                    }
                                                     return (
                                                         <ListItem>
                                                             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -203,11 +332,50 @@ export default class Calculator extends Component {
                                                                         let day_details = this.state.day_details
                                                                         day_details[key][day_part] = val
                                                                         this.setState({day_details})
-                                                                        this.updateDayTotal(key)
-                                                                        setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                        let hourDiff = this.state.days[key] - this.dayTotal(key)
+                                                                        if (day_details[key]._locked) {
+                                                                            if (day_part == "end") {
+                                                                                let nlunches = day_details[key].lunches.length
+                                                                                if (nlunches > 0) {
+                                                                                    let last_lunch = day_details[key].lunches[nlunches-1]
+                                                                                    last_lunch.lunchEnd = last_lunch.lunchEnd.add(hourDiff, 'hour', true)
+                                                                                } else {
+                                                                                    day_details[key].start = day_details[key].start.add(hourDiff, 'hour', true)
+                                                                                }
+                                                                            } else {
+                                                                                day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
+                                                                            }
+                                                                        } else {
+                                                                            this.updateDayTotal(key)
+                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                        }
                                                                     }}
                                                                 />
                                                             </LocalizationProvider>
+                                                            {day_part == "end" && <IconButton
+                                                                onClick={() => {
+                                                                    let day_details = this.state.day_details
+                                                                    let nextHour = 12
+                                                                    let len = day_details[key].lunches.length
+                                                                    if (len > 0) {
+                                                                        nextHour = day_details[key].lunches[len-1].lunchEnd.hour() + 1
+                                                                    }
+                                                                    day_details[key].lunches.push({
+                                                                        lunchStart: dayjs().hour(nextHour).minute(0),
+                                                                        lunchEnd: dayjs().hour(nextHour+1).minute(0)
+                                                                    })
+                                                                    this.setState({day_details})
+                                                                    if (day_details[key]._locked) {
+                                                                        let hourDiff = this.state.days[key] - this.dayTotal(key)
+                                                                        day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
+                                                                    } else {
+                                                                        this.updateDayTotal(key)
+                                                                        setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <AddCircleIcon/>
+                                                            </IconButton>}
                                                         </ListItem>
                                                     )
                                                 })
