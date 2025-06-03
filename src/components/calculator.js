@@ -124,12 +124,15 @@ export default class Calculator extends Component {
             for (let detail in newState.day_details[day]) {
                 if (detail = "lunches") {
                     for (let i = 0; i < newState.day_details[day].lunches.length; i++) {
-                        let lunch = newState.day_details[day].lunches[i]
-                        if (lunch.lunchStart != prevState.day_details[day].lunches[i].lunchStart) {
-                            this.flashState(`day_details.${day}.${i}.lunchStart`)
-                        }
-                        if (lunch.lunchEnd != prevState.day_details[day].lunches[i].lunchEnd) {
-                            this.flashState(`day_details.${day}.${i}.lunchEnd`)
+                        let lunches = newState.day_details[day].lunches
+                        let plunches = prevState.day_details[day].lunches
+                        if (plunches.length >= lunches.length) {
+                            if (lunches[i].lunchStart != plunches[i].lunchStart) {
+                                this.flashState(`day_details.${day}.${i}.lunchStart`)
+                            }
+                            if (lunches[i].lunchEnd != plunches[i].lunchEnd) {
+                                this.flashState(`day_details.${day}.${i}.lunchEnd`)
+                            }
                         }
                     }
                     continue
