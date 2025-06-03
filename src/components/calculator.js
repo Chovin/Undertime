@@ -18,7 +18,8 @@ export default class Calculator extends Component {
             'Mon': "8",
             'Tue': "8",
             'Wed': "8",
-            'Thu': "8"
+            'Thu': "8",
+            "Fri": "8",
         }
         let day_details = {}
         let accordion_state = {}
@@ -37,10 +38,6 @@ export default class Calculator extends Component {
             days: days,
             day_details,
             accordion_state,
-            start: dayjs().hour(8).minute(0),
-            lunchStart: dayjs().hour(12).minute(0),
-            lunchEnd:  dayjs().hour(13).minute(0),
-            end:  dayjs().hour(17).minute(0),
             target: 40,
             lock: true
         }
@@ -52,76 +49,33 @@ export default class Calculator extends Component {
         }
     }
 
-    get morning() {
-        return this.state.lunchStart.diff(this.state.start, 'hour', true)
-    }
-
-    get afternoon() {
-        return this.state.end.diff(this.state.lunchEnd, 'hour', true)
-    }
-
-    get lunch() {
-        return this.state.lunchEnd.diff(this.state.lunchStart, 'hour', true)
-    }
-
     get total() {
         const days = Object.values(this.state.days).map((v) => parseFloat(v) || 0).reduce((a,b) => a + b)
-        return this.displayNumber(days + this.morning + this.afternoon)
+        return this.displayNumber(days)
     }
 
     displayNumber(num) {
         return Math.round((num + Number.EPSILON) * 100) / 100
     }
 
-    handleStartLunch = (val) => {
-        let newState = {lunchStart: val}
-        if (val.add(1, 'minute').isAfter(this.state.lunchEnd)) {
-            newState.lunchEnd = val.add(1, 'minute')
-        }
-        this.setState(newState)
-        setTimeout(() => {
-            this.adjustEnd(this.state.target)
-        }, 0)
-    }
-
-    handleEndLunch = (val) => {
-        this.setState({lunchEnd: val})
-        setTimeout(() => {
-            if (this.state.lock) {
-                this.adjustEnd(this.state.target)
-            } else {
-                this.setState({target: this.total})
-            }
-        }, 0)
-    }
-
-    handleEnd = (val) => {
-        this.setState({end: val})
-        setTimeout(() => {
-            this.relativeAdjust()
-        }, 0)
-    }
-
-    relativeAdjust = (end) => {
-        end = end || false
+    relativeAdjust = () => {
         const hourDiff = this.state.target - this.total
         if (this.state.lock) {
-            if (end) {
-                this.adjustEnd(this.state.target)
-            } else {
-                this.setState({lunchEnd: this.state.lunchEnd.add(-hourDiff, 'hour')})
-            }
+            this.adjustEnd(this.state.target)
         } else {
             this.setState({target: this.total})
         }
     }
 
     adjustEnd = (target) => {
+        // might not be needed anymore
         const hourDiff = target - this.total
-        this.setState({end: this.state.end.add(hourDiff, 'hour')})
+        this.state.day_details['Fri'].end = this.state.day_details['Fri'].end.add(hourDiff, 'hour', true)
+        this.updateDayTotal('Fri')
     }
 
     handleLock = () => {
+        this.state.day_details['Fri']._locked = !this.state.lock
         this.setState({lock: !this.state.lock})
     }
 
@@ -188,6 +142,7 @@ export default class Calculator extends Component {
                                         <TextField
                                             label="Total Hours"
                                             type="number"
+                                            disabled={this.state.lock && key == 'Fri'}
                                             value={val}
                                             onChange={(evt) => {
                                                 let day_details = this.state.day_details
@@ -201,7 +156,7 @@ export default class Calculator extends Component {
                                                 })
 
 
-                                                setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                setTimeout(() => {this.relativeAdjust()}, 0)
                                             }}
                                         />
                                         <Box display="flex" alignItems="center" gap={1}> 
@@ -249,7 +204,7 @@ export default class Calculator extends Component {
                                                                                             day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
                                                                                         } else {
                                                                                             this.updateDayTotal(key)
-                                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                            setTimeout(() => {this.relativeAdjust()}, 0)
                                                                                         }
                                                                                     }}
                                                                                 />
@@ -272,7 +227,7 @@ export default class Calculator extends Component {
                                                                                             day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
                                                                                         } else {
                                                                                             this.updateDayTotal(key)
-                                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                            setTimeout(() => {this.relativeAdjust()}, 0)
                                                                                         }
                                                                                     }}
                                                                                 />
@@ -309,7 +264,7 @@ export default class Calculator extends Component {
                                                                                     day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
                                                                                 } else {
                                                                                     this.updateDayTotal(key)
-                                                                                    setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                                    setTimeout(() => {this.relativeAdjust()}, 0)
                                                                                 }
                                                                             }}
                                                                             style={{marginLeft: '8px'}}
@@ -347,7 +302,7 @@ export default class Calculator extends Component {
                                                                             }
                                                                         } else {
                                                                             this.updateDayTotal(key)
-                                                                            setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                            setTimeout(() => {this.relativeAdjust()}, 0)
                                                                         }
                                                                     }}
                                                                 />
@@ -370,7 +325,7 @@ export default class Calculator extends Component {
                                                                         day_details[key].end = day_details[key].end.add(hourDiff, 'hour', true)
                                                                     } else {
                                                                         this.updateDayTotal(key)
-                                                                        setTimeout(() => {this.relativeAdjust(true)}, 0)
+                                                                        setTimeout(() => {this.relativeAdjust()}, 0)
                                                                     }
                                                                 }}
                                                             >
@@ -387,67 +342,28 @@ export default class Calculator extends Component {
                         })
                     }
                     <ListItem>
-                        <p><b>Friday</b></p>
-                    </ListItem>
-                    <ListItem>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Clock In"
-                                value={this.state.start}
-                                onChange={(val) => {
-                                    this.setState({start: val})
-                                    setTimeout(() => {this.adjustEnd(this.state.target)}, 0)
-                                }}
-                            />
-                        </LocalizationProvider>
-                        <p>Morning hours: {this.displayNumber(this.morning)}</p>
-                    </ListItem>
-                    <ListItem>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Lunch Start"
-                                value={this.state.lunchStart}
-                                onChange={this.handleStartLunch}
-                            />
-                        </LocalizationProvider>
-                        -
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Lunch End"
-                                className="focus"
-                                value={this.state.lunchEnd}
-                                onChange={this.handleEndLunch}
-                            />
-                        </LocalizationProvider>
-                        <p>Lunch (hours): {this.displayNumber(this.lunch)}</p>
-                    </ListItem>
-                    <ListItem>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <TimePicker
-                                label="Clock Out"
-                                className="focus"
-                                value={this.state.end}
-                                onChange={this.handleEnd}
-                            />
-                        </LocalizationProvider>
-                        <p>Afternoon hours: {this.displayNumber(this.afternoon)}</p>
+                        <p><b>Target Hours</b></p>
                     </ListItem>
                     <ListItem>
                         <TextField
-                            label="Target Hours"
                             className="focus"
                             type="number"
                             value={this.state.target}
-                            onChange={(evt) => {this.adjustEnd(evt.target.value); this.setState({target: evt.target.value})}}
+                            onChange={(evt) => {
+                                let fri = this.state.day_details['Fri']
+                                let target = parseFloat(evt.target.value) || 0
+                                // this.adjustEnd(evt.target.value);
+                                let hourDiff = target - this.total
+                                fri.end = fri.end.add(hourDiff, 'hour', true)
+                                this.setState({target: evt.target.value})
+
+                                this.updateDayTotal('Fri')
+                                setTimeout(() => {this.relativeAdjust()}, 0)
+                            }}
                         />
                         <IconButton onClick={this.handleLock}>
                             {this.state.lock ? <LockIcon></LockIcon> : <LockOpenIcon></LockOpenIcon>}
                         </IconButton>
-                    </ListItem>
-                    <ListItem>
-                        <p>
-                            Total Hours: <b>{this.total}</b>
-                        </p>
                     </ListItem>
                 </List>
             </FormControl>
