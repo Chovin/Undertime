@@ -39,7 +39,9 @@ export default class Calculator extends Component {
             day_details,
             accordion_state,
             target: 40,
-            lock: true
+            lock: true,
+            track: {},
+            prevState: JSON.stringify({target: 40, days, day_details})
         }
         this.day_detail_labels = {
             start: "Clock In",
@@ -83,7 +85,61 @@ export default class Calculator extends Component {
         this.setState(JSON.parse(localStorage.getItem("sub_state")))
     }
 
-    componentDidUpdate() {
+    flashState = (path) => {
+        let track = this.state.track
+        if (track[path]) {
+            clearTimeout(track[path])
+        }
+        track[path] = setTimeout(() => {
+            track[path] = false
+            this.setState({track})
+        }, 1000)
+        this.setState({track})
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        let cs = {
+            target: this.state.target, 
+            days: this.state.days, 
+            day_details: this.state.day_details
+        }
+        delete cs.prevState
+        let currentState = JSON.stringify(cs)
+        let oldState = this.state.prevState
+
+        if (currentState == oldState) {
+            return
+        }
+        prevState = JSON.parse(oldState)
+        let newState = JSON.parse(currentState)
+        if (prevState.target !== newState.target) {
+            this.flashState("target")
+        }
+        for (let day in newState.days) {
+            if (newState.days[day] != prevState.days[day]) {
+                this.flashState(`days.${day}`)
+            }
+        }
+        for (let day in newState.day_details) {
+            for (let detail in newState.day_details[day]) {
+                if (detail = "lunches") {
+                    for (let i = 0; i < newState.day_details[day].lunches.length; i++) {
+                        let lunch = newState.day_details[day].lunches[i]
+                        if (lunch.lunchStart != prevState.day_details[day].lunches[i].lunchStart) {
+                            this.flashState(`day_details.${day}.${i}.lunchStart`)
+                        }
+                        if (lunch.lunchEnd != prevState.day_details[day].lunches[i].lunchEnd) {
+                            this.flashState(`day_details.${day}.${i}.lunchEnd`)
+                        }
+                    }
+                    continue
+                } else if (newState.day_details[day][detail] != prevState.day_details[day][detail]) {
+                    this.flashState(`day_details.${day}.${detail}`)
+                }
+            }
+        }
+        this.setState({prevState: currentState})
+
         localStorage.setItem("sub_state", JSON.stringify(this.getLocalStorageState()))
     }
 
@@ -95,7 +151,7 @@ export default class Calculator extends Component {
     }
 
     updateDayTotal(day) {
-        let days = this.state.days
+        let days = {...this.state.days}
         days[day] = this.dayTotal(day)
         // console.log(days, day, morning + afternoon)
         this.setState({days})
@@ -142,6 +198,7 @@ export default class Calculator extends Component {
                                         <TextField
                                             label="Total Hours"
                                             type="number"
+                                            className={this.state.track[`days.${key}`] ? 'focus' : ''}
                                             disabled={this.state.lock && key == 'Fri'}
                                             value={val}
                                             onChange={(evt) => {
@@ -149,6 +206,7 @@ export default class Calculator extends Component {
                                                 let old_total = this.dayTotal(key)
                                                 let new_total = evt.target.value
                                                 day_details[key].end = day_details[key].end.add(new_total-old_total,'hour')
+                                                this.flashState(`day_details.${key}.end`)
 
                                                 this.setState({
                                                     days: {...this.state.days, [key]: new_total},
@@ -175,7 +233,7 @@ export default class Calculator extends Component {
                                         <List>
                                             {
                                                 Object.entries(this.state.day_details[key]).map(([day_part, part_val]) => {
-                                                    if (day_part == "_locked") {  // design debt. will fix later
+                                                    if (day_part[0] == '_') {  // design debt. will fix later
                                                         return
                                                     }
                                                     if (day_part == "lunches") {
@@ -190,6 +248,7 @@ export default class Calculator extends Component {
                                                                                 style={{padding: '8px 0px'}}
                                                                             >
                                                                                 <TimePicker
+                                                                                    className={this.state.track[`day_details.${key}.${index}.lunchStart`] ? 'focus' : ''}
                                                                                     label={this.day_detail_labels['lunchStart']}
                                                                                     value={lunch.lunchStart}
                                                                                     onChange={(val) => {
@@ -213,12 +272,13 @@ export default class Calculator extends Component {
                                                                                 style={{padding: '8px 0px'}}
                                                                             >
                                                                                 <TimePicker
+                                                                                    className={this.state.track[`day_details.${key}.${index}.lunchEnd`] ? 'focus' : ''}
                                                                                     label={this.day_detail_labels['lunchEnd']}
                                                                                     value={lunch.lunchEnd}
                                                                                     onChange={(val) => {
                                                                                         let day_details = this.state.day_details
                                                                                         lunch.lunchEnd = val
-                                                                                        if (lunch.lunchEnd.isBefore(val) || lunch.lunchStart.isSame(val)) {
+                                                                                        if (lunch.lunchStart.isAfter(val) || lunch.lunchStart.isSame(val)) {
                                                                                             lunch.lunchStart = val.subtract(1, 'minute')
                                                                                         }
                                                                                         this.setState({day_details})
@@ -281,6 +341,7 @@ export default class Calculator extends Component {
                                                         <ListItem>
                                                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                                                 <TimePicker
+                                                                    className={this.state.track[`day_details.${key}.${day_part}`] ? 'focus' : ''}
                                                                     label={this.day_detail_labels[day_part]}
                                                                     value={part_val}
                                                                     onChange={(val) => {
@@ -346,7 +407,7 @@ export default class Calculator extends Component {
                     </ListItem>
                     <ListItem>
                         <TextField
-                            className="focus"
+                            className={this.state.track['target'] ? 'focus' : ''}
                             type="number"
                             value={this.state.target}
                             onChange={(evt) => {

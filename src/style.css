@@ -72,7 +72,13 @@ div.MuiFormControl-root {
 	}
 }
 
+fieldset {
+	transition: border-color 1.5s ease, box-shadow 1.5s ease, border-width 1s ease;
+	border-width: 1px;
+}
+
 .focus fieldset {
 	border-color: rgb(58, 205, 42);
 	border-width: 2px;
+	transition: none;
 }
