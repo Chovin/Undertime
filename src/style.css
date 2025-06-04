@@ -94,3 +94,9 @@ fieldset {
 	left: 0;
 	content: var(--content);
 }
+
+@media (max-width: 768px) {
+	#app {
+		margin: 0 auto
+	}
+}

@@ -3,6 +3,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { FormControl, FormLabel, IconButton, List, ListItem, TextField, Accordion, AccordionSummary, AccordionDetails, Box } from "@mui/material";
+import useMediaQuery from '@mui/material/useMediaQuery';
 import dayjs from "dayjs";
 
 import LockIcon from '@mui/icons-material/Lock';
@@ -322,8 +323,10 @@ export default class Calculator extends Component {
                                                                             }}
                                                                         >
                                                                         </div>
-                                                                        <div>
-                                                                            - {this.displayNumber(lunch.lunchEnd.diff(lunch.lunchStart, 'hour', true))} hours
+                                                                        <div style={{
+                                                                            whiteSpace: 'nowrap',
+                                                                        }}>
+                                                                            - {this.displayNumber(lunch.lunchEnd.diff(lunch.lunchStart, 'hour', true)) + (useMediaQuery('(max-width: 768px)')? 'hr' : ' hours')}
                                                                         </div>
                                                                         <IconButton
                                                                             onClick={() => {
